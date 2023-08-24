@@ -1,0 +1,39 @@
+# 使用Gradio搭建demo
+
+在音频分类的最后一节中，我们将使用[Gradio](https://gradio.app)构建一个demo，展示我们刚刚在[GTZAN](https://huggingface.co/datasets/marsyas/gtzan)数据集上训练的音乐分类模型。首先要做的是使用`pipeline()`类加载微调后的检查点，我们在[音频分类的预训练模型与数据集](classification_models)一节中已经介绍了具体的方法。您可以将`model_id`更改为Hugging Face Hub上微调模型的namespace：
+
+```python
+from transformers import pipeline
+
+model_id = "sanchit-gandhi/distilhubert-finetuned-gtzan"
+pipe = pipeline("audio-classification", model=model_id)
+```
+
+接下来，我们定义一个函数，该函数接受音频输入的文件路径并将其传递给pipeline。pipeline会自动加载并处理音频文件，将其重采样到正确的采样率，并使用模型运行推理。我们将模型的预测`preds`格式化为字典对象，以在输出上显示：
+
+
+```python
+def classify_audio(filepath):
+    preds = pipe(filepath)
+    outputs = {}
+    for p in preds:
+        outputs[p["label"]] = p["score"]
+    return outputs
+```
+
+最后，我们使用刚刚定义的函数启动Gradio demo：
+
+
+```python
+import gradio as gr
+
+demo = gr.Interface(
+    fn=classify_audio, inputs=gr.Audio(type="filepath"), outputs=gr.outputs.Label()
+)
+demo.launch(debug=True)
+```
+
+`launch`函数会启动我们的Gradio demo，与Hugging Face Space上运行的demo类似：
+
+<iframe src="https://course-demos-song-classifier.hf.space" frameBorder="0" height="450" title="Gradio app" class="container p-0 flex-grow space-iframe" allow="accelerometer; ambient-light-sensor; autoplay; battery; camera; document-domain; encrypted-media; fullscreen; geolocation; gyroscope; layout-animations; legacy-image-formats; magnetometer; microphone; midi; oversized-images; payment; picture-in-picture; publickey-credentials-get; sync-xhr; usb; vr ; wake-lock; xr-spatial-tracking" sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-downloads"></iframe>
+
